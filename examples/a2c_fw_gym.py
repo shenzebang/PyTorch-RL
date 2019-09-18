@@ -10,10 +10,10 @@ from utils import *
 from models.mlp_policy import Policy
 from models.mlp_critic import Value
 from models.mlp_policy_disc import DiscretePolicy
-from core.a2c_normalize import a2c_normalize_step
+from core.a2c_fw import a2c_fw_step
 from core.common import estimate_advantages
 from core.agent import Agent
-
+from utils.linear_optimization_oracles.lo_for_nuclear_norm_ball import LONuclearNormBall
 
 parser = argparse.ArgumentParser(description='PyTorch A2C example')
 parser.add_argument('--env-name', default="Hopper-v2", metavar='G',
@@ -34,7 +34,7 @@ parser.add_argument('--num-threads', type=int, default=8, metavar='N',
                     help='number of threads for agent (default: 4)')
 parser.add_argument('--seed', type=int, default=1, metavar='N',
                     help='random seed (default: 1)')
-parser.add_argument('--min-batch-size', type=int, default=2048, metavar='N',
+parser.add_argument('--min-batch-size', type=int, default=4096, metavar='N',
                     help='minimal batch size per A2C update (default: 2048)')
 parser.add_argument('--max-iter-num', type=int, default=500, metavar='N',
                     help='maximal number of main iterations (default: 500)')
@@ -42,6 +42,8 @@ parser.add_argument('--log-interval', type=int, default=1, metavar='N',
                     help='interval between training status logs (default: 1)')
 parser.add_argument('--save-model-interval', type=int, default=0, metavar='N',
                     help="interval between saving model (default: 0, means don't save)")
+parser.add_argument('--radius', type=float, default=1, metavar='N',
+                    help="radius of the nuclear norm ball constraint (default: 1)")
 parser.add_argument('--gpu-index', type=int, default=0, metavar='N')
 args = parser.parse_args()
 
@@ -80,6 +82,7 @@ optimizer_value = torch.optim.Adam(value_net.parameters(), lr=0.01)
 
 """create agent"""
 agent = Agent(env, policy_net, device, running_state=running_state, render=args.render, num_threads=args.num_threads)
+lo = LONuclearNormBall(args.radius)
 
 
 def update_params(batch):
@@ -94,7 +97,7 @@ def update_params(batch):
     advantages, returns = estimate_advantages(rewards, masks, values, args.gamma, args.tau, device)
 
     """perform TRPO update"""
-    a2c_normalize_step(policy_net, value_net, optimizer_policy, optimizer_value, states, actions, returns, advantages, args.l2_reg)
+    a2c_fw_step(policy_net, value_net, optimizer_policy, optimizer_value, states, actions, returns, advantages, args.l2_reg, lo)
 
 
 def main_loop():
