@@ -15,6 +15,8 @@ from core.a2c_normalize import a2c_normalize_step
 from core.common import estimate_advantages
 from core.agent import Agent
 
+from tensorboardX import SummaryWriter
+from datetime import datetime
 
 parser = argparse.ArgumentParser(description='PyTorch A2C example')
 parser.add_argument('--env-name', default="Hopper-v2", metavar='G',
@@ -44,6 +46,7 @@ parser.add_argument('--log-interval', type=int, default=1, metavar='N',
 parser.add_argument('--save-model-interval', type=int, default=0, metavar='N',
                     help="interval between saving model (default: 0, means don't save)")
 parser.add_argument('--gpu-index', type=int, default=0, metavar='N')
+
 args = parser.parse_args()
 
 dtype = torch.float64
@@ -51,6 +54,10 @@ torch.set_default_dtype(dtype)
 device = torch.device('cuda', index=args.gpu_index) if torch.cuda.is_available() else torch.device('cpu')
 if torch.cuda.is_available():
     torch.cuda.set_device(args.gpu_index)
+
+"""logger"""
+algo_name = 'a2c_storm'
+writer = SummaryWriter('../logs/{0}_{1}_{2}'.format(args.env_name, algo_name, str(datetime.now())))
 
 """environment"""
 env = gym.make(args.env_name)
@@ -171,5 +178,9 @@ def main_loop():
             """clean up gpu memory"""
             torch.cuda.empty_cache()
 
+        # Tensorboard
+        writer.add_scalar('avg_reward', log['avg_reward'], i_iter)
+        writer.add_scalar('min_reward', log['min_reward'], i_iter)
+        writer.add_scalar('max_reward', log['max_reward'], i_iter)
 
 main_loop()

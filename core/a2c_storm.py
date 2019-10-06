@@ -40,7 +40,7 @@ def a2c_storm_step(policy_net, value_net, optimizer_policy, optimizer_value, sta
     optimizer_value.step()
 
     """update policy"""
-    learning_rate = 3e-2
+    learning_rate = 5e-2
     alpha = 1/(i_iter+2)**(2/3)
     # alpha = 1
     log_probs = policy_net.get_log_prob(states, actions)
