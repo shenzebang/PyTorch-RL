@@ -83,7 +83,7 @@ optimizer_value = torch.optim.Adam(value_net.parameters(), lr=0.01)
 agent = Agent(env, policy_net, device, running_state=running_state, render=args.render, num_threads=args.num_threads)
 
 
-def update_params(batch, grad_flat, d_theta, i_iter):
+def update_params(batch, grad_flat, d_theta, cur_params, i_iter):
     states = torch.from_numpy(np.stack(batch.state)).to(dtype).to(device)
     actions = torch.from_numpy(np.stack(batch.action)).to(dtype).to(device)
     rewards = torch.from_numpy(np.stack(batch.reward)).to(dtype).to(device)
@@ -95,7 +95,7 @@ def update_params(batch, grad_flat, d_theta, i_iter):
     advantages, returns = estimate_advantages(rewards, masks, values, args.gamma, args.tau, device)
 
     """perform TRPO update"""
-    grad_flat, d_theta = a2c_storm_step(policy_net, value_net, optimizer_policy, optimizer_value, states, actions, returns, advantages, args.l2_reg, grad_flat, d_theta, i_iter)
+    grad_flat, d_theta = a2c_storm_step(policy_net, value_net, optimizer_policy, optimizer_value, states, actions, returns, advantages, args.l2_reg, grad_flat, d_theta, i_iter, cur_params)
 
     return grad_flat, d_theta
 
@@ -149,11 +149,11 @@ def main_loop():
             # generate samples
             batch, log = agent.collect_samples(args.min_batch_size)
 
-            set_flat_params_to(policy_net, cur_params)
+            # set_flat_params_to(policy_net, cur_params)
             prev_params = cur_params
 
             t0 = time.time()
-            grad_flat, d_theta = update_params(batch, grad_flat, d_theta, i_iter)
+            grad_flat, d_theta = update_params(batch, grad_flat, d_theta, cur_params, i_iter)
             t1 = time.time()
 
             cur_params = get_flat_params_from(policy_net)
