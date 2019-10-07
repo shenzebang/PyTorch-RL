@@ -55,7 +55,7 @@ if torch.cuda.is_available():
 
 """logger"""
 algo_name = 'a2c_normalize'
-writer = SummaryWriter('../logs/{0}_{1}_{2}'.format(args.env_name, algo_name, str(datetime.now())))
+writer = SummaryWriter('./logs/{0}_{1}_{2}'.format(args.env_name, algo_name, str(datetime.now())))
 
 """environment"""
 env = gym.make(args.env_name)
@@ -128,5 +128,5 @@ def main_loop():
         writer.add_scalar('avg_reward', log['avg_reward'], i_iter)
         writer.add_scalar('min_reward', log['min_reward'], i_iter)
         writer.add_scalar('max_reward', log['max_reward'], i_iter)
-        
+
 main_loop()

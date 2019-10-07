@@ -55,7 +55,7 @@ if torch.cuda.is_available():
 
 """logger"""
 algo_name = 'a2c'
-writer = SummaryWriter('../logs/{0}_{1}_{2}'.format(args.env_name, algo_name, str(datetime.now())))
+writer = SummaryWriter('./logs/{0}_{1}_{2}'.format(args.env_name, algo_name, str(datetime.now())))
 
 """environment"""
 env = gym.make(args.env_name)
