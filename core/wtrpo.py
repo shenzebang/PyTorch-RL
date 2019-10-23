@@ -94,8 +94,8 @@ def trpo_step(policy_net, value_net, states, actions, returns, advantages, max_k
 
     """directly compute Hessian*vector from KL"""
     def Fvp_direct(v):
-        kl = policy_net.get_kl(states)
-        # kl = policy_net.get_w2(states)
+        # kl = policy_net.get_kl(states)
+        kl = policy_net.get_w2(states)
         kl = kl.mean()
 
         grads = torch.autograd.grad(kl, policy_net.parameters(), create_graph=True)

@@ -50,6 +50,16 @@ class Policy(nn.Module):
         kl = log_std1 - log_std0 + (std0.pow(2) + (mean0 - mean1).pow(2)) / (2.0 * std1.pow(2)) - 0.5
         return kl.sum(1, keepdim=True)
 
+    def get_w2(self, x):
+        mean1, log_std1, std1 = self.forward(x)
+
+        mean0 = mean1.detach()
+        log_std0 = log_std1.detach()
+        std0 = std1.detach()
+        w2 = (mean1 - mean0).pow(2).sum(1, keepdim=True) + (std1.pow(.5) - std0.pow(.5)).pow(2).sum(1, keepdim=True)
+        # w2 = torch.sqrt(w2)
+        return w2
+
     def get_log_prob(self, x, actions):
         action_mean, action_log_std, action_std = self.forward(x)
         return normal_log_density(actions, action_mean, action_log_std, action_std)
