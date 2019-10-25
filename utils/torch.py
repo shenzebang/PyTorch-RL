@@ -72,3 +72,51 @@ def compute_flat_grad(output, inputs, filter_input_ids=set(), retain_graph=False
     for param in params:
         param.grad = None
     return grads
+
+
+def flat(grads):
+    flat_grads = []
+    for grad in grads:
+        flat_grads.append(grad.view(-1))
+    flat_grads = torch.cat(flat_grads)
+    return flat_grads
+
+
+def get_update_direction_with_lo(grad_flat, current_net, lo):
+    directions = []
+    prev_ind = 0
+    for param in current_net.parameters():
+        flat_size = int(np.prod(list(param.size())))
+        ndarray = grad_flat[prev_ind:prev_ind + flat_size].view(param.size()).detach()
+        if ndarray.dim() > 1:  # inter-layer parameters
+            ndarray = ndarray.numpy()
+            direction_layer = lo.lo_oracle(-ndarray)
+            direction_layer = torch.from_numpy(direction_layer).view(-1)
+            direction_layer = param.view(-1) - direction_layer.double()
+        else:  # parameters of activation functions
+            direction_layer = ndarray
+        directions.append(direction_layer)
+        prev_ind += flat_size
+    direction = torch.cat(directions)
+    # print(torch.norm(-grad_flat - direction))
+    return direction
+
+def get_update_direction_with_lo2(grad_flat, net, lo, cur_params):
+    directions = []
+    prev_ind = 0
+    for param in net.parameters():
+        flat_size = int(np.prod(list(param.size())))
+        ndarray = grad_flat[prev_ind:prev_ind + flat_size].view(param.size()).detach()
+        cur_param = cur_params[prev_ind:prev_ind + flat_size]
+        if ndarray.dim() > 1:  # inter-layer parameters
+            ndarray = ndarray.numpy()
+            direction_layer = lo.lo_oracle(-ndarray)
+            direction_layer = torch.from_numpy(direction_layer).view(-1)
+            direction_layer = cur_param - direction_layer.double()
+        else:  # parameters of activation functions
+            direction_layer = ndarray
+        directions.append(direction_layer)
+        prev_ind += flat_size
+    direction = torch.cat(directions)
+    # print(torch.norm(-grad_flat - direction))
+    return direction
